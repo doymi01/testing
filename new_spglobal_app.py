@@ -143,12 +143,20 @@ class NewSpglobalCliApp(DoyleApp):
                 st = data.get("sourcetype")
                 s = data.get("source")
                 h = data.get("host")
+
+                if isinstance(s, list):
+                    sources = "(" + ", ".join([json.dumps(x) for x in s]) + ")"
+                    logger.notice(sources)                     
+                else:
+                    sources = f'({json.dumps(s)})'
+
                 idx = [x for x in indexes if x != "lastchanceindex"]
                 logger.debug(idx[0])
-                sources = "(\"" + "\", \"".join(s) + "\")"
-                payload["search"] = f"search index=lastchanceindex sourcetype={json.dumps(st)} source IN {json.dumps(sources)} host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"                
+                
+                payload["search"] = f"search index=lastchanceindex sourcetype={json.dumps(st)} source IN {sources} host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"                
 
                 logger.debug(f"Running task with {list(payload.items())}") # noqa: F821
+
                 with pool_lock:
                     url = f"https://{next(destination_pool)}.spglobal.splunkcloud.com:8089/services/search/jobs"
                 
@@ -194,13 +202,13 @@ class NewSpglobalCliApp(DoyleApp):
         """
         # open the jsonl file and dispatch to the workers
         if testmode == "true":
-            self._results_file_path = "./testmode_results.jsonl"
+            self._results_file_path = "./testmode_new_results.jsonl"
         elif testmode == "false":
-            self._results_file_path = "./results.jsonl"
+            self._results_file_path = "./new_results.jsonl"
         else:
             raise SystemExit(f"Invalid value for testmode={testmode}")
         args_list = list()
-        with open("missing_data_lastchance.jsonl", "r") as f:
+        with open("updated_missing.jsonl", "r") as f:
             for line in [line.strip() for line in f]:
                 args_list.append(json.loads(line))
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
@@ -214,7 +222,7 @@ class NewSpglobalCliApp(DoyleApp):
 # The following is required boilerplate
 # DO NOT MODIFY
 def cli():
-    app = SpglobalCliApp()
+    app = NewSpglobalCliApp()
     try:
         app.run()
     finally:
