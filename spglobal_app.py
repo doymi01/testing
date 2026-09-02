@@ -152,6 +152,7 @@ class SpglobalCliApp(DoyleApp):
                     url = f"https://{next(destination_pool)}.spglobal.splunkcloud.com:8089/services/search/jobs"
                 
                 response = session.post(url, data=payload)
+                logger.debug(json.dumps(response.json(), indent=2))
                 result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results", [])), "messages": response.json().get("messages", [])}
                 if response.status_code in [200, 201]:
                     if result.get("messages"):
