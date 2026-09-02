@@ -146,7 +146,7 @@ class NewSpglobalCliApp(DoyleApp):
 
                 if isinstance(s, list):
                     sources = "(" + ", ".join([json.dumps(x) for x in s]) + ")"
-                    logger.notice(sources)                     
+                    logger.debug(sources)                     
                 else:
                     sources = f'({json.dumps(s)})'
 
