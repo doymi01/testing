@@ -7,6 +7,8 @@ import time  # noqa: F401
 from datetime import datetime, timedelta  # noqa: F401
 from pathlib import Path   # noqa: F401
 from typing import TYPE_CHECKING, Any, Dict, List, Union   # noqa: F401
+import itertools
+import threading
 
 from doyles_sdk.cli.apps._base_app import DoyleApp
 
@@ -30,6 +32,17 @@ _token = "eyJraWQiOiJzcGx1bmsuc2VjcmV0IiwiYWxnIjoiSFM1MTIiLCJ2ZXIiOiJ2MiIsInR0eX
 session = SplunkSession(token=_token)
 
 testmode = "true"
+
+server_list = [
+    "sh-i-0084fbe9d072d19bf",
+    "sh-i-01c82c9c8849c2059",
+    "sh-i-065fe812b39bfa388",
+    "sh-i-089c6e59818c12bc7",
+    "sh-i-0cfb8f562a05b8f47"
+]
+
+destination_pool = itertools.cycle(server_list)
+pool_lock = threading.Lock()
 
 @register_cmd
 class SpglobalCliApp(DoyleApp):
@@ -135,8 +148,10 @@ class SpglobalCliApp(DoyleApp):
                 payload["search"] = f"search index=lastchanceindex sourcetype={json.dumps(st)} source={json.dumps(s)} host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"                
 
                 logger.debug(f"Running task with {list(payload.items())}") # noqa: F821
+                with pool_lock:
+                    url = f"https://{next(destination_pool)}.spglobal.splunkcloud.com:8089/services/search/jobs"
                 
-                response = session.post("https://spglobal.splunkcloud.com:8089/services/search/jobs", data=payload)
+                response = session.post(url, data=payload)
                 result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results")), "messages": response.json().get("messages", [])}
                 if response.status_code in [200, 201]:
                     if result.get("messages"):
