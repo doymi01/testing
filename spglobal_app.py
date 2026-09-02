@@ -87,7 +87,8 @@ class SpglobalCliApp(DoyleApp):
         **Example:**
             parser.add_argument("--example", help="Example argument", default="value")
         """
-        parser.add_argument("--example", help="Example argument", default="value")
+        # parser.add_argument("--no-testmode", help="Use testmode=false", action="save_true")
+        pass
 
     @classmethod
     def args_post_process(cls, parser):
@@ -124,6 +125,7 @@ class SpglobalCliApp(DoyleApp):
             indexes = data.get("index")
             if not isinstance(indexes, list):
                 logger.error("Unknown dest index for event %s", data)
+                return {"status_code": None, "result": data, "count": 0, "messages": ["Unknown dest index for event"]}
             else:
                 st = data.get("sourcetype")
                 s = data.get("source")
@@ -135,9 +137,12 @@ class SpglobalCliApp(DoyleApp):
                 logger.debug(f"Running task with {list(payload.items())}") # noqa: F821
                 
                 response = session.post("https://spglobal.splunkcloud.com:8089/services/search/jobs", data=payload)
-                result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results"))}
+                result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results")), "messages": response.json().get("messages", [])}
                 if response.status_code in [200, 201]:
-                    logger.notice(result)
+                    if result.get("messages"):
+                        logger.warning(result)
+                    else:
+                     logger.notice(result)
                 else:
                     logger.error(result)
 
@@ -171,7 +176,10 @@ class SpglobalCliApp(DoyleApp):
             - self.args
         """
         # open the jsonl file and dispatch to the workers
-        self._results_file_path = "./results.jsonl"
+        if testmode:
+            self._results_file_path = "./testmode_results.jsonl"
+        else:
+            self._results_file_path = "./results.jsonl"
         args_list = list()
         with open("missing_data_lastchance.jsonl", "r") as f:
             for line in [line.strip() for line in f]:
