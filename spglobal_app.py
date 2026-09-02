@@ -127,7 +127,7 @@ class SpglobalCliApp(DoyleApp):
             "count": 0,
             "adhoc_search_level": "fast",
             "allow_partial_results": "false",
-            "earliest_time": "-2mon@mon",
+            "earliest_time": "-4mon@mon",
             "enable_lookups": "false",
             "exec_mode": "oneshot",
             "latest_time": "@mon",
