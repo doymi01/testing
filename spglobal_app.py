@@ -192,10 +192,12 @@ class SpglobalCliApp(DoyleApp):
             - self.args
         """
         # open the jsonl file and dispatch to the workers
-        if testmode:
+        if testmode == "true":
             self._results_file_path = "./testmode_results.jsonl"
-        else:
+        elif testmode == "false":
             self._results_file_path = "./results.jsonl"
+        else:
+            raise SystemExit(f"Invalid value for testmode={testmode}")
         args_list = list()
         with open("missing_data_lastchance.jsonl", "r") as f:
             for line in [line.strip() for line in f]:
