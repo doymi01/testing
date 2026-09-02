@@ -1,3 +1,4 @@
 venv/**
 missing_data_lastchance.jsonl
+new_missing_data.jsonl
 accessx.text
