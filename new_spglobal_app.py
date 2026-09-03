@@ -77,7 +77,7 @@ class NewSpglobalCliApp(DoyleApp):
         - __version__
     """
 
-    command_name = "spglobal"
+    command_name = "new_spglobal"
     mp_safe = False       # Allow multiprocessing
     thread_safe = True   # Allow threads
 
@@ -232,7 +232,7 @@ class NewSpglobalCliApp(DoyleApp):
                             done_set.add(hashable_str)                    
         except FileNotFoundError:
             pass
-        
+
         # 3. Blazing fast lookup loop
         for item in src_list:
             item_str = json.dumps(item["result"], sort_keys=True)
