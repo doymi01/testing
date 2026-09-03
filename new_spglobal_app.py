@@ -238,6 +238,8 @@ class NewSpglobalCliApp(DoyleApp):
             item_str = json.dumps(item["result"], sort_keys=True)
             if item_str not in done_set:
                 args_list.append(item)
+            else:
+                logger.warning("Skipping previously processed %s", item)
 
         # with open("updated_missing.jsonl", "r") as f:
         #     for line in [line.strip() for line in f]:
