@@ -207,16 +207,46 @@ class NewSpglobalCliApp(DoyleApp):
             self._results_file_path = "./new_results.jsonl"
         else:
             raise SystemExit(f"Invalid value for testmode={testmode}")
+        
+        src_list = list()
+        done_set = set()
         args_list = list()
+
+        # 1. Read source data
         with open("updated_missing.jsonl", "r") as f:
-            for line in [line.strip() for line in f]:
-                args_list.append(json.loads(line))
+            for line in f:
+                stripped = line.strip()
+                if stripped:
+                    src_list.append(json.loads(stripped))
+
+        # 2. Build the set using standardized JSON strings
+        try:
+            with open(self._results_file_path, "r") as f:
+                for line in f:
+                    stripped = line.strip()
+                    if stripped:
+                        x = json.loads(stripped)
+                        if x is not None and x.get("count", 0) > 0:
+                            # sort_keys=True guarantees identical dicts/lists stringify exactly the same
+                            hashable_str = json.dumps(x["result"], sort_keys=True)
+                            done_set.add(hashable_str)                    
+        except FileNotFoundError:
+            pass
+        
+        # 3. Blazing fast lookup loop
+        for item in src_list:
+            item_str = json.dumps(item["result"], sort_keys=True)
+            if item_str not in done_set:
+                args_list.append(item)
+
+        # with open("updated_missing.jsonl", "r") as f:
+        #     for line in [line.strip() for line in f]:
+        #         args_list.append(json.loads(line))
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
         results = self.run_with_workers(self.do_example_task, args_list, max_workers=25, result_func=self.log_result)
 
-        with open("results.json", "w") as f:
+        with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
             f.write(json.dumps(results, indent=2)) 
-
 
 
 # The following is required boilerplate
