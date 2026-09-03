@@ -239,7 +239,7 @@ class NewSpglobalCliApp(DoyleApp):
             if item_str not in done_set:
                 args_list.append(item)
             else:
-                logger.warning("Skipping previously processed %s", item)
+                self.logger.warning("Skipping previously processed %s", item)
 
         # with open("updated_missing.jsonl", "r") as f:
         #     for line in [line.strip() for line in f]:
