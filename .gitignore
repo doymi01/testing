@@ -5,4 +5,4 @@ accessx.text
 updated_missing.jsonl
 spglobal.log
 *.jsonl
-new_spglobal.log
+new_spglobal.log*
