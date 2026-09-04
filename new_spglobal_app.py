@@ -31,7 +31,7 @@ from doyles_sdk._wrappers import SplunkSession
 _token = "eyJraWQiOiJzcGx1bmsuc2VjcmV0IiwiYWxnIjoiSFM1MTIiLCJ2ZXIiOiJ2MiIsInR0eXAiOiJzdGF0aWMifQ.eyJpc3MiOiJtZG95bGUgZnJvbSBzaC1pLTBjZmI4ZjU2MmEwNWI4ZjQ3Iiwic3ViIjoibWRveWxlIiwiYXVkIjoiY29weSBldmVudHMgZnJvbSBsYXN0Y2hhbmNlaW5kZXMiLCJpZHAiOiJTcGx1bmsiLCJqdGkiOiJhZDQyZGEwYTc1OTc2MjQ3N2RlMzU2MDYzNDEzNzkwNjgyMDA2YzAxNTEyOGIxYzAwN2NmNmM2ZDJmNWRlZGE2IiwiaWF0IjoxNzg3NTg1MTEzLCJleHAiOjE3OTAxNzcxMTMsIm5iciI6MTc4NzU4NTExM30.bySPu5TniTh20tumAzF1dUoOtrwSuNxT22hEPt7N3K-6a_H0sA5WGrTlevUCRyAIx4WnI4x19So7FQsUgo4mFQ"
 session = SplunkSession(token=_token, include_post=True)
 
-testmode = "true"
+testmode = "false"
 
 server_list = [
     "sh-i-0084fbe9d072d19bf",
@@ -226,7 +226,7 @@ class NewSpglobalCliApp(DoyleApp):
                     stripped = line.strip()
                     if stripped:
                         x = json.loads(stripped)
-                        if x is not None and x.get("count", 0) > 0:
+                        if x is not None and x.get("status_code", 0)==200:
                             # sort_keys=True guarantees identical dicts/lists stringify exactly the same
                             hashable_str = json.dumps(x["result"], sort_keys=True)
                             done_set.add(hashable_str)                    
