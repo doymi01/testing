@@ -9,6 +9,7 @@ from pathlib import Path   # noqa: F401
 from typing import TYPE_CHECKING, Any, Dict, List, Union   # noqa: F401
 import itertools
 import threading
+import tempfile
 
 from doyles_sdk.cli.apps._base_app import DoyleApp
 
@@ -212,8 +213,11 @@ class NewSpglobalCliApp(DoyleApp):
         done_set = set()
         args_list = list()
 
+        src_file = "updated_missing.jsonl"
+        target_dir = os.path.dirname(os.path.abspath(src_file))
+
         # 1. Read source data
-        with open("updated_missing.jsonl", "r") as f:
+        with open(src_file, "r") as f:
             for line in f:
                 stripped = line.strip()
                 if stripped:
@@ -226,7 +230,7 @@ class NewSpglobalCliApp(DoyleApp):
                     stripped = line.strip()
                     if stripped:
                         x = json.loads(stripped)
-                        if x is not None and x.get("status_code", 0)==200:
+                        if x is not None:
                             # sort_keys=True guarantees identical dicts/lists stringify exactly the same
                             hashable_str = json.dumps(x["result"], sort_keys=True)
                             done_set.add(hashable_str)
@@ -241,9 +245,30 @@ class NewSpglobalCliApp(DoyleApp):
             else:
                 self.logger.warning("Skipping previously processed %s", item)
 
-        with open("updated_missing.jsonl", "w") as f:
-            for line in [line.strip() for line in args_list]:
-                f.write(json.dumps(line) + "\n")
+        with tempfile.NamedTemporaryFile("w", dir=target_dir, delete=False, suffix=".tmp") as tf:
+            temp_path = tf.name
+            try:
+                # 3. Stream data into the temporary file line-by-line (for JSONL)
+                for item in args_list:
+                    # Intentionally simulate an error here if you want to test safety:
+                    # if "trigger" in item: raise ValueError("Simulated crash!")
+                    
+                    tf.write(json.dumps(item) + "\n")
+                
+                # Flush internal buffers to disk before closing
+                tf.flush()
+                os.fsync(tf.fileno()) 
+                
+            except Exception as e:
+                # 4. If anything goes wrong, clean up the temp file and re-raise the error
+                tf.close()
+                os.remove(temp_path)
+                print(f"Error occurred! Original file is untouched. Details: {e}")
+                raise e
+
+        # 5. Success! Atomically replace the old file with the new complete file
+        # This operation is instantaneous and safe from interruptions
+        os.replace(temp_path, src_file)
 
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
         results = self.run_with_workers(self.do_example_task, args_list, max_workers=25, result_func=self.log_result)
