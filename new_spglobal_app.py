@@ -38,7 +38,7 @@ server_list = [
     "sh-i-0084fbe9d072d19bf",
     "sh-i-01c82c9c8849c2059",
     "sh-i-065fe812b39bfa388",
-    "sh-i-089c6e59818c12bc7",
+    # "sh-i-089c6e59818c12bc7",
     "sh-i-0cfb8f562a05b8f47"
 ]
 
