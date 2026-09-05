@@ -271,7 +271,7 @@ class NewSpglobalCliApp(DoyleApp):
         os.replace(temp_path, src_file)
 
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
-        results = self.run_with_workers(self.do_example_task, args_list, max_workers=25, result_func=self.log_result)
+        results = self.run_with_workers(self.do_example_task, args_list, max_workers=5, result_func=self.log_result)
 
         with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
             f.write(json.dumps(results, indent=2))
