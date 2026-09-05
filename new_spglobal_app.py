@@ -146,20 +146,20 @@ class NewSpglobalCliApp(DoyleApp):
 
                 if isinstance(s, list):
                     sources = "(" + ", ".join([json.dumps(x) for x in s]) + ")"
-                    logger.debug(sources)                     
+                    logger.debug(sources)
                 else:
                     sources = f'({json.dumps(s)})'
 
                 idx = [x for x in indexes if x != "lastchanceindex"]
                 logger.debug(idx[0])
-                
-                payload["search"] = f"search index=lastchanceindex sourcetype={json.dumps(st)} source IN {sources} host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"                
+
+                payload["search"] = f"search index=lastchanceindex sourcetype={json.dumps(st)} source IN {sources} host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"
 
                 logger.debug(f"Running task with {list(payload.items())}") # noqa: F821
 
                 with pool_lock:
                     url = f"https://{next(destination_pool)}.spglobal.splunkcloud.com:8089/services/search/jobs"
-                
+
                 response = session.post(url, data=payload)
                 logger.debug(json.dumps(response.json(), indent=2))
                 result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results", [])), "messages": response.json().get("messages", [])}
@@ -207,7 +207,7 @@ class NewSpglobalCliApp(DoyleApp):
             self._results_file_path = "./new_results.jsonl"
         else:
             raise SystemExit(f"Invalid value for testmode={testmode}")
-        
+
         src_list = list()
         done_set = set()
         args_list = list()
@@ -229,7 +229,7 @@ class NewSpglobalCliApp(DoyleApp):
                         if x is not None and x.get("status_code", 0)==200:
                             # sort_keys=True guarantees identical dicts/lists stringify exactly the same
                             hashable_str = json.dumps(x["result"], sort_keys=True)
-                            done_set.add(hashable_str)                    
+                            done_set.add(hashable_str)
         except FileNotFoundError:
             pass
 
@@ -241,14 +241,15 @@ class NewSpglobalCliApp(DoyleApp):
             else:
                 self.logger.warning("Skipping previously processed %s", item)
 
-        # with open("updated_missing.jsonl", "r") as f:
-        #     for line in [line.strip() for line in f]:
-        #         args_list.append(json.loads(line))
+        with open("updated_missing.jsonl", "w") as f:
+            for line in [line.strip() for line in args_list]:
+                f.write(json.dumps(line) + "\n")
+
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
         results = self.run_with_workers(self.do_example_task, args_list, max_workers=25, result_func=self.log_result)
 
         with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
-            f.write(json.dumps(results, indent=2)) 
+            f.write(json.dumps(results, indent=2))
 
 
 # The following is required boilerplate
