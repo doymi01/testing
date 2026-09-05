@@ -154,7 +154,7 @@ class NewSpglobalCliApp(DoyleApp):
                 idx = [x for x in indexes if x != "lastchanceindex"]
                 logger.debug(idx[0])
 
-                payload["search"] = f"search index=lastchanceindex sourcetype={json.dumps(st)} source IN {sources} host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"
+                payload["search"] = f"search index=lastchanceindex (sourcetype={json.dumps(st)} OR _sourcetype={json.dumps(st)}) (source IN {sources} OR _source IN {sources}) host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"
 
                 logger.debug(f"Running task with {list(payload.items())}") # noqa: F821
 
