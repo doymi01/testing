@@ -243,19 +243,23 @@ class NewSpglobalCliApp(DoyleApp):
         for item in src_list:
             item_str = json.dumps(item["result"], sort_keys=True)
             if item_str not in done_set:
-                if isinstance(item.get("source"), list):
+                sources = item.get("source")
+
+                if isinstance(sources, list):
                     # slice sources if needed
                     chunksize = 5
-                    index = 0
+                    start = 0
+                    assert isinstance(sources, list)
 
-                    while index < len(item.get("source")):
+                    while start < len(sources):
                         # create a new shallow copy of the item
                         tmp_item = dict(item)
                         # slice the list into chunks
-                        tmp_item["source"] = item.get("source")[index : index + chunksize]
+                        tmp_item["source"] = sources[start : start + chunksize]
+                        assert len(tmp_item) < chunksize
                         # add each new chunk to the args_list
                         args_list.append(tmp_item)
-                        index += chunksize
+                        start += chunksize
                 else:
                     args_list.append(item)
             else:
