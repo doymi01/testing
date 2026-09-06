@@ -128,7 +128,7 @@ class NewSpglobalCliApp(DoyleApp):
             "count": 0,
             "adhoc_search_level": "fast",
             "allow_partial_results": "false",
-            "earliest_time": "-4mon@mon",
+            "earliest_time": "-6mon@mon",
             "enable_lookups": "false",
             "exec_mode": "oneshot",
             "latest_time": "@mon",
@@ -154,7 +154,7 @@ class NewSpglobalCliApp(DoyleApp):
                 idx = [x for x in indexes if x != "lastchanceindex"]
                 logger.debug(idx[0])
 
-                payload["search"] = f"search index=lastchanceindex (sourcetype={json.dumps(st)} OR _sourcetype={json.dumps(st)}) (source IN {sources} OR _source IN {sources}) host={json.dumps(h)} | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"
+                payload["search"] = f"search index=lastchanceindex (sourcetype={json.dumps(st)} OR _sourcetype={json.dumps(st)}) (source IN {sources} OR _source IN {sources}) (host={json.dumps(h)} OR _host={json.dumps(h)}) | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"
 
                 logger.debug(f"Running task with {list(payload.items())}") # noqa: F821
 
@@ -241,33 +241,33 @@ class NewSpglobalCliApp(DoyleApp):
 
         # 3. Blazing fast lookup loop
         for item in src_list:
-            item_str = json.dumps(item["result"], sort_keys=True)
+            # Safely fetch the inner result dictionary
+            result_dict = item.get("result", {})
+            item_str = json.dumps(result_dict, sort_keys=True)
+
             if item_str not in done_set:
-                sources = item.get("source")
+                sources = result_dict.get("source")
 
-                try:
-                    assert isinstance(sources, list)
-                except AssertionError:
-                    self.logger.error(json.dumps(item, indent=2))
-                    raise
-                
                 if isinstance(sources, list):
-                    # slice sources if needed
-                    chunksize = 5
-                    start = 0
+                    chunksize = 10
+                    
+                    # Optimization: Just append the original if it's already small enough
+                    if len(sources) <= chunksize:
+                        args_list.append(item)
 
-                    assert isinstance(sources, list)
-                    assert start < len(sources)
+                    else:
+                        index = 0
+                        while index < len(sources):
+                            # Deep copy because we are mutating a nested dict structure!
+                            # Modifying result_dict directly would ruin the original item.
+                            import copy
+                            tmp_item = copy.deepcopy(item)
+                            
+                            # Slice the nested sources list
+                            tmp_item["result"]["source"] = sources[index : index + chunksize]
+                            args_list.append(tmp_item)
+                            index += chunksize                        
 
-                    while start < len(sources):
-                        # create a new shallow copy of the item
-                        tmp_item = dict(item)
-                        # slice the list into chunks
-                        tmp_item["source"] = sources[start : start + chunksize]
-                        assert len(tmp_item) < chunksize
-                        # add each new chunk to the args_list
-                        args_list.append(tmp_item)
-                        start += chunksize
                 else:
                     args_list.append(item)
             else:
