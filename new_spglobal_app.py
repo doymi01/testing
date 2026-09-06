@@ -161,6 +161,8 @@ class NewSpglobalCliApp(DoyleApp):
                 with pool_lock:
                     url = f"https://{next(destination_pool)}.spglobal.splunkcloud.com:8089/services/search/jobs"
 
+                logger.debug(url)
+
                 response = session.post(url, data=payload)
                 logger.debug(json.dumps(response.json(), indent=2))
                 result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results", [])), "messages": response.json().get("messages", [])}
