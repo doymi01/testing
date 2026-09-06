@@ -244,12 +244,14 @@ class NewSpglobalCliApp(DoyleApp):
             item_str = json.dumps(item["result"], sort_keys=True)
             if item_str not in done_set:
                 sources = item.get("source")
-
+                assert isinstance(sources, list)
                 if isinstance(sources, list):
                     # slice sources if needed
                     chunksize = 5
                     start = 0
+
                     assert isinstance(sources, list)
+                    assert start < len(sources)
 
                     while start < len(sources):
                         # create a new shallow copy of the item
