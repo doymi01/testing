@@ -244,7 +244,13 @@ class NewSpglobalCliApp(DoyleApp):
             item_str = json.dumps(item["result"], sort_keys=True)
             if item_str not in done_set:
                 sources = item.get("source")
-                assert isinstance(sources, list)
+
+                try:
+                    assert isinstance(sources, list)
+                except AssertionError:
+                    self.logger.error(json.dumps(item, indent=2))
+                    raise
+                
                 if isinstance(sources, list):
                     # slice sources if needed
                     chunksize = 5
