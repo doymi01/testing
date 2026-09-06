@@ -32,7 +32,7 @@ from doyles_sdk._wrappers import SplunkSession
 _token = "eyJraWQiOiJzcGx1bmsuc2VjcmV0IiwiYWxnIjoiSFM1MTIiLCJ2ZXIiOiJ2MiIsInR0eXAiOiJzdGF0aWMifQ.eyJpc3MiOiJtZG95bGUgZnJvbSBzaC1pLTBjZmI4ZjU2MmEwNWI4ZjQ3Iiwic3ViIjoibWRveWxlIiwiYXVkIjoiY29weSBldmVudHMgZnJvbSBsYXN0Y2hhbmNlaW5kZXMiLCJpZHAiOiJTcGx1bmsiLCJqdGkiOiJhZDQyZGEwYTc1OTc2MjQ3N2RlMzU2MDYzNDEzNzkwNjgyMDA2YzAxNTEyOGIxYzAwN2NmNmM2ZDJmNWRlZGE2IiwiaWF0IjoxNzg3NTg1MTEzLCJleHAiOjE3OTAxNzcxMTMsIm5iciI6MTc4NzU4NTExM30.bySPu5TniTh20tumAzF1dUoOtrwSuNxT22hEPt7N3K-6a_H0sA5WGrTlevUCRyAIx4WnI4x19So7FQsUgo4mFQ"
 session = SplunkSession(token=_token, include_post=True)
 
-testmode = "false"
+testmode = "true"
 
 server_list = [
     "sh-i-0084fbe9d072d19bf",
@@ -243,7 +243,21 @@ class NewSpglobalCliApp(DoyleApp):
         for item in src_list:
             item_str = json.dumps(item["result"], sort_keys=True)
             if item_str not in done_set:
-                args_list.append(item)
+                if isinstance(item.get("source"), list):
+                    # slice sources if needed
+                    chunksize = 5
+                    index = 0
+
+                    while index < len(item.get("source")):
+                        # create a new shallow copy of the item
+                        tmp_item = dict(item)
+                        # slice the list into chunks
+                        tmp_item["source"] = item.get("source")[index : index + chunksize]
+                        # add each new chunk to the args_list
+                        args_list.append(tmp_item)
+                        index += chunksize
+                else:
+                    args_list.append(item)
             else:
                 self.logger.warning("Skipping previously processed %s", item)
 
@@ -270,7 +284,8 @@ class NewSpglobalCliApp(DoyleApp):
 
         # 5. Success! Atomically replace the old file with the new complete file
         # This operation is instantaneous and safe from interruptions
-        os.replace(temp_path, src_file)
+        if testmode == "false":
+            os.replace(temp_path, src_file)
 
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
         results = self.run_with_workers(self.do_example_task, args_list, max_workers=5, result_func=self.log_result)
