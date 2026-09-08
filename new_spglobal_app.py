@@ -249,7 +249,8 @@ class NewSpglobalCliApp(DoyleApp):
                 sources = result_dict.get("source")
 
                 if isinstance(sources, list):
-                    chunksize = 75
+                    self.logger.notice(len(sources))
+                    chunksize = 5000
                     
                     # Optimization: Just append the original if it's already small enough
                     if len(sources) <= chunksize:
