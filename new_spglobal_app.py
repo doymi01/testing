@@ -252,7 +252,7 @@ class NewSpglobalCliApp(DoyleApp):
                     sources = result_dict.get("source")
                     if isinstance(sources, list):
                         import copy
-                        self.logger.notice(len(sources))
+                        self.logger.debug(len(sources))
                         chunksize = 5
                         
                         if len(sources) <= chunksize:
@@ -300,10 +300,11 @@ class NewSpglobalCliApp(DoyleApp):
         # with open(src_file, "r") as f:
         #     final_worker_args = [json.loads(l) for l in f]
 
-        results = self.run_with_workers(self.do_example_task, final_worker_args, max_workers=15, result_func=self.log_result)
+        
+        self.run_with_workers(self.do_example_task, final_worker_args, max_workers=15, result_func=self.log_result)
 
-        with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
-            f.write(json.dumps(results, indent=2))
+        # with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
+        #     f.write(json.dumps(results, indent=2))
 
 
 # The following is required boilerplate
