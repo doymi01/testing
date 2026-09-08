@@ -299,8 +299,6 @@ class NewSpglobalCliApp(DoyleApp):
         # This operation is instantaneous and safe from interruptions
         if testmode == "false":
             os.replace(temp_path, src_file)
-        else:
-            raise SystemExit("testmode")
 
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
         results = self.run_with_workers(self.do_example_task, args_list, max_workers=15, result_func=self.log_result)
