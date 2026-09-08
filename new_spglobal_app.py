@@ -37,8 +37,8 @@ testmode = "true"
 server_list = [
     "sh-i-0084fbe9d072d19bf",
     "sh-i-01c82c9c8849c2059",
-    # "sh-i-065fe812b39bfa388",
-    # "sh-i-089c6e59818c12bc7",
+    "sh-i-065fe812b39bfa388",
+    "sh-i-089c6e59818c12bc7",
     "sh-i-0cfb8f562a05b8f47"
 ]
 
@@ -303,7 +303,7 @@ class NewSpglobalCliApp(DoyleApp):
             raise SystemExit("testmode")
 
         # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
-        results = self.run_with_workers(self.do_example_task, args_list, max_workers=5, result_func=self.log_result)
+        results = self.run_with_workers(self.do_example_task, args_list, max_workers=15, result_func=self.log_result)
 
         with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
             f.write(json.dumps(results, indent=2))
