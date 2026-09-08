@@ -32,7 +32,7 @@ from doyles_sdk._wrappers import SplunkSession
 _token = "eyJraWQiOiJzcGx1bmsuc2VjcmV0IiwiYWxnIjoiSFM1MTIiLCJ2ZXIiOiJ2MiIsInR0eXAiOiJzdGF0aWMifQ.eyJpc3MiOiJtZG95bGUgZnJvbSBzaC1pLTBjZmI4ZjU2MmEwNWI4ZjQ3Iiwic3ViIjoibWRveWxlIiwiYXVkIjoiY29weSBldmVudHMgZnJvbSBsYXN0Y2hhbmNlaW5kZXMiLCJpZHAiOiJTcGx1bmsiLCJqdGkiOiJhZDQyZGEwYTc1OTc2MjQ3N2RlMzU2MDYzNDEzNzkwNjgyMDA2YzAxNTEyOGIxYzAwN2NmNmM2ZDJmNWRlZGE2IiwiaWF0IjoxNzg3NTg1MTEzLCJleHAiOjE3OTAxNzcxMTMsIm5iciI6MTc4NzU4NTExM30.bySPu5TniTh20tumAzF1dUoOtrwSuNxT22hEPt7N3K-6a_H0sA5WGrTlevUCRyAIx4WnI4x19So7FQsUgo4mFQ"
 session = SplunkSession(token=_token, include_post=True)
 
-testmode = "false"
+testmode = "true"
 
 server_list = [
     "sh-i-0084fbe9d072d19bf",
@@ -218,14 +218,7 @@ class NewSpglobalCliApp(DoyleApp):
         src_file = "updated_missing.jsonl"
         target_dir = os.path.dirname(os.path.abspath(src_file))
 
-        # 1. Read source data
-        with open(src_file, "r") as f:
-            for line in f:
-                stripped = line.strip()
-                if stripped:
-                    src_list.append(json.loads(stripped))
-
-        # 2. Build the set using standardized JSON strings
+        # 1. Build the set using standardized JSON strings
         try:
             with open(self._results_file_path, "r") as f:
                 for line in f:
@@ -239,61 +232,80 @@ class NewSpglobalCliApp(DoyleApp):
         except FileNotFoundError:
             pass
 
-        # 3. Blazing fast lookup loop
-        for item in src_list:
-            # Safely fetch the inner result dictionary
-            result_dict = item.get("result", {})
-            item_str = json.dumps(result_dict, sort_keys=True)
 
-            if item_str not in done_set:
-                sources = result_dict.get("source")
+        # 2. Define a generator to stream and chunk data ONE ITEM AT A TIME
+        def stream_and_chunk_items(src_file_path, done_set):
+            with open(src_file_path, "r") as f:
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                        
+                    item = json.loads(stripped)
+                    result_dict = item.get("result", {})
+                    item_str = json.dumps(result_dict, sort_keys=True)
 
-                if isinstance(sources, list):
-                    self.logger.notice(len(sources))
-                    chunksize = 5
-                    
-                    # Optimization: Just append the original if it's already small enough
-                    if len(sources) <= chunksize:
-                        args_list.append(item)
+                    if item_str in done_set:
+                        self.logger.warning("Skipping previously processed %s", item)
+                        continue
 
+                    sources = result_dict.get("source")
+                    if isinstance(sources, list):
+                        import copy
+                        self.logger.notice(len(sources))
+                        chunksize = 5
+                        
+                        if len(sources) <= chunksize:
+                            yield item
+                        else:
+                            # Process chunks sequentially. Python's garbage collector 
+                            # clears the previous 'tmp_item' on the next iteration loop.
+                            for index in range(0, len(sources), chunksize):
+                                tmp_item = copy.deepcopy(item)
+                                tmp_item["result"]["source"] = sources[index : index + chunksize]
+                                yield tmp_item
                     else:
-                        index = 0
-                        while index < len(sources):
-                            # Deep copy because we are mutating a nested dict structure!
-                            # Modifying result_dict directly would ruin the original item.
-                            import copy
-                            tmp_item = copy.deepcopy(item)
-                            
-                            # Slice the nested sources list
-                            tmp_item["result"]["source"] = sources[index : index + chunksize]
-                            args_list.append(tmp_item)
-                            index += chunksize                        
+                        yield item
 
-                else:
-                    args_list.append(item)
-            else:
-                self.logger.warning("Skipping previously processed %s", item)
-
+        # 3. Stream data straight into the temporary file line-by-line
+        # This replaces `args_list`, ensuring your RAM usage never spikes.
         with tempfile.NamedTemporaryFile("w", dir=target_dir, delete=False, suffix=".tmp") as tf:
             temp_path = tf.name
             try:
-                # 3. Stream data into the temporary file line-by-line (for JSONL)
-                for item in args_list:
-                    # Intentionally simulate an error here if you want to test safety:
-                    # if "trigger" in item: raise ValueError("Simulated crash!")
-                    
+                # We consume the generator lazily here
+                for item in stream_and_chunk_items(src_file, done_set):
                     tf.write(json.dumps(item) + "\n")
-                
-                # Flush internal buffers to disk before closing
+                    
                 tf.flush()
                 os.fsync(tf.fileno()) 
                 
             except Exception as e:
-                # 4. If anything goes wrong, clean up the temp file and re-raise the error
                 tf.close()
                 os.remove(temp_path)
                 print(f"Error occurred! Original file is untouched. Details: {e}")
                 raise e
+ 
+
+        # with tempfile.NamedTemporaryFile("w", dir=target_dir, delete=False, suffix=".tmp") as tf:
+        #     temp_path = tf.name
+        #     try:
+        #         # 3. Stream data into the temporary file line-by-line (for JSONL)
+        #         for item in args_list:
+        #             # Intentionally simulate an error here if you want to test safety:
+        #             # if "trigger" in item: raise ValueError("Simulated crash!")
+                    
+        #             tf.write(json.dumps(item) + "\n")
+                
+        #         # Flush internal buffers to disk before closing
+        #         tf.flush()
+        #         os.fsync(tf.fileno()) 
+                
+        #     except Exception as e:
+        #         # 4. If anything goes wrong, clean up the temp file and re-raise the error
+        #         tf.close()
+        #         os.remove(temp_path)
+        #         print(f"Error occurred! Original file is untouched. Details: {e}")
+        #         raise e
 
         # 5. Success! Atomically replace the old file with the new complete file
         # This operation is instantaneous and safe from interruptions
