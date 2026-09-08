@@ -170,7 +170,7 @@ class NewSpglobalCliApp(DoyleApp):
                     if result.get("messages"):
                         logger.warning(result)
                     else:
-                     logger.notice(result)
+                        logger.notice(result)
                 else:
                     logger.error(result)
 
