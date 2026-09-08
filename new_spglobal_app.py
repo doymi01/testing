@@ -250,7 +250,7 @@ class NewSpglobalCliApp(DoyleApp):
 
                 if isinstance(sources, list):
                     self.logger.notice(len(sources))
-                    chunksize = 5000
+                    chunksize = 5
                     
                     # Optimization: Just append the original if it's already small enough
                     if len(sources) <= chunksize:
