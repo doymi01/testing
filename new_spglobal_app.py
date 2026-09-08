@@ -286,34 +286,21 @@ class NewSpglobalCliApp(DoyleApp):
                 raise e
  
 
-        # with tempfile.NamedTemporaryFile("w", dir=target_dir, delete=False, suffix=".tmp") as tf:
-        #     temp_path = tf.name
-        #     try:
-        #         # 3. Stream data into the temporary file line-by-line (for JSONL)
-        #         for item in args_list:
-        #             # Intentionally simulate an error here if you want to test safety:
-        #             # if "trigger" in item: raise ValueError("Simulated crash!")
-                    
-        #             tf.write(json.dumps(item) + "\n")
-                
-        #         # Flush internal buffers to disk before closing
-        #         tf.flush()
-        #         os.fsync(tf.fileno()) 
-                
-        #     except Exception as e:
-        #         # 4. If anything goes wrong, clean up the temp file and re-raise the error
-        #         tf.close()
-        #         os.remove(temp_path)
-        #         print(f"Error occurred! Original file is untouched. Details: {e}")
-        #         raise e
-
         # 5. Success! Atomically replace the old file with the new complete file
         # This operation is instantaneous and safe from interruptions
         if testmode == "false":
             os.replace(temp_path, src_file)
+        # results = self.run_with_workers(self.do_example_task, args_list, max_workers=15, result_func=self.log_result)
+        # 5. Worker execution memory fix
+        # Instead of keeping a giant args_list in memory, pass the generator 
+        # directly to the workers if `run_with_workers` accepts iterables.
+        # If it REQUIRES a materialized list, read it back from the newly saved disk file!
+        final_worker_args = stream_and_chunk_items(src_file, done_set) 
+        # OR if your worker framework requires a rigid list:
+        # with open(src_file, "r") as f:
+        #     final_worker_args = [json.loads(l) for l in f]
 
-        # args_list = [self.args.example] if isinstance(self.args.example, str) else self.args.example
-        results = self.run_with_workers(self.do_example_task, args_list, max_workers=15, result_func=self.log_result)
+        results = self.run_with_workers(self.do_example_task, final_worker_args, max_workers=15, result_func=self.log_result)
 
         with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
             f.write(json.dumps(results, indent=2))
