@@ -166,7 +166,7 @@ class NewSpglobalCliApp(DoyleApp):
 
                 response = session.post(url, data=payload)
                 logger.debug(json.dumps(response.json(), indent=2))
-                result = {"status_code": response.status_code, "result": data, "count": response.json().get("results", 0), "messages": response.json().get("messages", []), "search": payload["search"]}
+                result = {"status_code": response.status_code, "result": data, "count": response.json().get("results", 0), "messages": int(response.json().get("messages", [])), "search": payload["search"]}
                 if response.status_code in [200, 201]:
                     if result.get("messages"):
                         logger.warning(result)
