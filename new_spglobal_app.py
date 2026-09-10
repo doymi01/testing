@@ -152,6 +152,7 @@ class NewSpglobalCliApp(DoyleApp):
                     sources = f'({json.dumps(s)})'
 
                 idx = [x for x in indexes if x != "lastchanceindex"]
+                # TODO what happens when there is more than one destination index?
                 logger.debug(idx[0])
 
                 payload["search"] = f"search index=lastchanceindex (sourcetype={json.dumps(st)} OR _sourcetype={json.dumps(st)}) (source IN {sources} OR _source IN {sources}) (host={json.dumps(h)} OR _host={json.dumps(h)}) | fields _time, _raw, sourcetype, source, host | collect testmode={testmode} index={idx[0]} output_format=hec"
@@ -165,7 +166,7 @@ class NewSpglobalCliApp(DoyleApp):
 
                 response = session.post(url, data=payload)
                 logger.debug(json.dumps(response.json(), indent=2))
-                result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results", [])), "messages": response.json().get("messages", [])}
+                result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results", [])), "messages": response.json().get("messages", []), "search": payload["search"]}
                 if response.status_code in [200, 201]:
                     if result.get("messages"):
                         logger.warning(result)
@@ -301,7 +302,7 @@ class NewSpglobalCliApp(DoyleApp):
         #     final_worker_args = [json.loads(l) for l in f]
 
         
-        self.run_with_workers(self.do_example_task, final_worker_args, max_workers=100, result_func=self.log_result)
+        self.run_with_workers(self.do_example_task, final_worker_args, max_workers=25, result_func=self.log_result)
 
         # with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
         #     f.write(json.dumps(results, indent=2))
