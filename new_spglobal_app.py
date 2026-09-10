@@ -206,9 +206,7 @@ class NewSpglobalCliApp(DoyleApp):
         else:
             raise SystemExit(f"Invalid value for testmode={testmode}")
 
-        src_list = list()
         done_set = set()
-        args_list = list()
 
         src_file = "updated_missing.jsonl"
         target_dir = os.path.dirname(os.path.abspath(src_file))
@@ -237,11 +235,13 @@ class NewSpglobalCliApp(DoyleApp):
                         continue
                         
                     item = json.loads(stripped)
-                    result_dict = item.get("result", {})
+                    result_dict = item.get("result")
+                    if not result_dict:
+                        continue
                     item_str = json.dumps(result_dict, sort_keys=True)
 
                     if item_str in done_set:
-                        self.logger.warning("Skipping previously processed %s", item)
+                        self.logger.info("Skipping previously processed %s", item)
                         continue
 
                     sources = result_dict.get("source")
