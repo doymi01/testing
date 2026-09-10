@@ -304,6 +304,7 @@ class NewSpglobalCliApp(DoyleApp):
         
         self.run_with_workers(self.do_example_task, final_worker_args, max_workers=100, result_func=self.log_result)
 
+
         # with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
         #     f.write(json.dumps(results, indent=2))
 
@@ -311,10 +312,17 @@ class NewSpglobalCliApp(DoyleApp):
 # The following is required boilerplate
 # DO NOT MODIFY
 def cli():
+    import tracemalloc
+    tracemalloc.start()
+    snapshot1 = tracemalloc.take_snapshot()
     app = NewSpglobalCliApp()
     try:
         app.run()
     finally:
+        snapshot2 = tracemalloc.take_snapshot()
+        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+        for stat in top_stats[:10]:
+            print(stat)
         app.shutdown_logging()
 
 if __name__ == "__main__":
