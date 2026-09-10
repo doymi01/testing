@@ -165,25 +165,19 @@ class NewSpglobalCliApp(DoyleApp):
                 logger.debug(url)
 
                 response = session.post(url, data=payload)
-                logger.debug(json.dumps(response.json(), indent=2))
-                result = {"status_code": response.status_code, "result": data, "count": int(response.json().get("results", [])[0].get("count", 0)), "messages": response.json().get("messages", []), "search": payload["search"]}
+                json_response = response.json()
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(json.dumps(json_response, indent=2))
+                result = {"status_code": response.status_code, "result": data, "count": int(json_response.get("results", [])[0].get("count", 0)), "messages": json_response.get("messages", []), "search": payload["search"]}
                 if response.status_code in [200, 201]:
                     if result.get("messages"):
-                        logger.warning(result)
-                    else:
                         logger.notice(result)
+                    else:
+                        logger.info(result)
                 else:
                     logger.error(result)
 
                 return result
-
-                # if response.status_code in [200, 201]:
-                #     result = {"status_code": response.status_code, "result": data, "count": len(response.json().get("results"))}
-                #     return result
-                # else:
-                #     result = {"status_code": response.status_code, "message": response.json().get("messages"), "arg": arg}
-                #     logger.error(result)
-                #     return result
 
 
     def reprocess(self, result: dict) -> list[tuple[callable, object]]:
