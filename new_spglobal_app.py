@@ -279,12 +279,13 @@ class NewSpglobalCliApp(DoyleApp):
                 os.remove(temp_path)
                 print(f"Error occurred! Original file is untouched. Details: {e}")
                 raise e
- 
 
         # 5. Success! Atomically replace the old file with the new complete file
         # This operation is instantaneous and safe from interruptions
         if testmode == "false":
             os.replace(temp_path, src_file)
+            # done_set is not needed for the generator after the new file is written
+            done_set = set()
         # results = self.run_with_workers(self.do_example_task, args_list, max_workers=15, result_func=self.log_result)
         # 5. Worker execution memory fix
         # Instead of keeping a giant args_list in memory, pass the generator 
@@ -296,7 +297,7 @@ class NewSpglobalCliApp(DoyleApp):
         #     final_worker_args = [json.loads(l) for l in f]
 
         
-        self.run_with_workers(self.do_example_task, final_worker_args, max_workers=100, result_func=self.log_result)
+        self.run_with_workers(self.do_example_task, final_worker_args, max_workers=50, result_func=self.log_result)
 
 
         # with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
