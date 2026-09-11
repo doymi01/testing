@@ -129,8 +129,14 @@ class NewSpglobalCliApp(DoyleApp):
         n = next(_task_counter)
         if n % 500 == 0:
             with pool_lock:
-                with open("objgraph.out", "a") as f:
-                    objgraph.show_growth(limit=15, file=f)
+                # with open("objgraph.out", "a") as f:
+                #     objgraph.show_growth(limit=15, file=f)
+                conns = objgraph.by_type('HTTPSConnection')
+                if conns:
+                    chain = objgraph.find_backref_chain(conns[-1], objgraph.is_proper_module)
+                    with open(f"/path/to/chain_{n}.txt", "w") as f:
+                        for obj in chain:
+                            f.write(f"{type(obj)}: {repr(obj)[:200]}\n")
 
         payload = {
             "output_mode": "json",
