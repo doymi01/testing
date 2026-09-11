@@ -291,13 +291,13 @@ class NewSpglobalCliApp(DoyleApp):
         # Instead of keeping a giant args_list in memory, pass the generator 
         # directly to the workers if `run_with_workers` accepts iterables.
         # If it REQUIRES a materialized list, read it back from the newly saved disk file!
-        final_worker_args = stream_and_chunk_items(src_file, set()) 
+        # final_worker_args = stream_and_chunk_items(src_file, set()) 
         # OR if your worker framework requires a rigid list:
         # with open(src_file, "r") as f:
         #     final_worker_args = [json.loads(l) for l in f]
 
-        
-        self.run_with_workers(self.do_example_task, final_worker_args, max_workers=50, result_func=self.log_result)
+        with open("src_file", "r") as f:
+            self.run_with_workers(self.do_example_task, f, max_workers=50, result_func=self.log_result)
 
 
         # with open(self._results_file_path.replace("jsonl", "json"), "w") as f:
