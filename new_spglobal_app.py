@@ -134,7 +134,7 @@ class NewSpglobalCliApp(DoyleApp):
             "latest_time": "@mon",
             "reload_macros": "false"}
         # time.sleep(0.5)
-        data = arg.get("result")
+        data = json.loads(arg).get("result")
         if data:
             indexes = data.get("index")
             if not isinstance(indexes, list):
