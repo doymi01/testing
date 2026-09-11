@@ -134,7 +134,7 @@ class NewSpglobalCliApp(DoyleApp):
                 conns = objgraph.by_type('HTTPSConnection')
                 if conns:
                     chain = objgraph.find_backref_chain(conns[-1], objgraph.is_proper_module)
-                    with open(f"/path/to/chain_{n}.txt", "w") as f:
+                    with open(f"chain_{n}.txt", "w") as f:
                         for obj in chain:
                             f.write(f"{type(obj)}: {repr(obj)[:200]}\n")
 
