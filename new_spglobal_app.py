@@ -296,7 +296,7 @@ class NewSpglobalCliApp(DoyleApp):
         # with open(src_file, "r") as f:
         #     final_worker_args = [json.loads(l) for l in f]
 
-        with open("src_file", "r") as f:
+        with open(src_file, "r") as f:
             self.run_with_workers(self.do_example_task, f, max_workers=50, result_func=self.log_result)
 
 
