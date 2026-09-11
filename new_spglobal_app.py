@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Union   # noqa: F401
 import itertools
 import threading
 import tempfile
+import objgraph
 
 from doyles_sdk.cli.apps._base_app import DoyleApp
 
@@ -44,6 +45,8 @@ server_list = [
 
 destination_pool = itertools.cycle(server_list)
 pool_lock = threading.Lock()
+
+_task_counter = itertools.count()
 
 @register_cmd
 class NewSpglobalCliApp(DoyleApp):
@@ -123,6 +126,12 @@ class NewSpglobalCliApp(DoyleApp):
         logger is automatically injected to all do_* methods
 
         """
+        n = next(_task_counter)
+        if n % 500 == 0:
+            with pool_lock:
+                with open("objgraph.out", "a") as f:
+                    objgraph.show_growth(limit=15, file=f)
+
         payload = {
             "output_mode": "json",
             "count": 0,
